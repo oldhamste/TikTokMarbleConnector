@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>TikTok Marble Overlay</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Arial, sans-serif;
+      color: white;
+      overflow: hidden;
+    }
+
+    #joined-banner {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.55);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 25px rgba(0, 200, 255, 0.4);
+    }
+
+    #joined-names {
+      font-size: 16px;
+      color: #55eaff;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .popup {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      padding: 12px 20px;
+      border-radius: 16px;
+      font-size: 22px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(0,255,255,0.4);
+    }
+
+    .popup.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="joined-banner">
+    <strong>Last Joined:</strong>
+    <div id="joined-names">No players yet</div>
+  </div>
+
+  <div id="popup" class="popup"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    const socket = io();
+
+    const joinedNamesEl = document.getElementById("joined-names");
+    const popupEl = document.getElementById("popup");
+
+    function showPopup(text) {
+      popupEl.textContent = text;
+      popupEl.classList.add("show");
+      setTimeout(() => popupEl.classList.remove("show"), 2500);
+    }
+
+    socket.on("state:lastJoined", (players) => {
+      if (!players.length) {
+        joinedNamesEl.textContent = "No players yet";
+        return;
+      }
+
+      joinedNamesEl.innerHTML = "";
+      players.forEach((p) => {
+        const span = document.createElement("span");
+        span.textContent = p.nickname || p.uniqueId;
+        joinedNamesEl.appendChild(span);
+      });
+    });
+
+    socket.on("event:join", ({ user }) => {
+      showPopup(`${user.nickname || user.uniqueId} joined the race!`);
+    });
+
+    socket.on("event:gift:rose", ({ user }) => {
+      showPopup(`${user.nickname || user.uniqueId} sent a 🌹 Rose!`);
+    });
+
+    socket.on("event:gift:big", ({ user }) => {
+      showPopup(`${user.nickname || user.uniqueId} sent a BIG gift! ⚡`);
+    });
+  </script>
+
+</body>
+</html>
